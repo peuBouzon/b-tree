@@ -9,7 +9,7 @@ class BTree:
         self.max_entries_per_node = max_entries_per_node
         self.root = Node(0, max_entries_per_node)
         self.height = 0
-        self.n_entries = 0 #n
+        self.n_entries = 0
 
     def get(self, key):
         if key is None:
@@ -24,6 +24,7 @@ class BTree:
         else:
             n_entries_on_node = len(node)
             for i in range(n_entries_on_node):
-                if i+1 == n_entries_on_node or key < node.entries[i+1]:
+                # find the greater entry whose value is smaller or equal to the key 
+                if i+1 == n_entries_on_node or key < node.entries[i+1].key:
                     return self._search(node.entries[i].next_node, key, height - 1)
         return None
