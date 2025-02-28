@@ -1,79 +1,88 @@
+from typing import List
 from node import Node
 from entry import Entry
+import math
+
 
 class BTree:
-    INVALID_KEY_MESSAGE = "The key to search should be informed."
-    INVALID_MAX_ENTRIES_MESSAGE = "The number of entries per node should be even."
-
     def __init__(self, max_entries_per_node = 1000) -> None:
-
-        if not max_entries_per_node % 2 == 0:
-            raise ValueError(BTree.INVALID_MAX_ENTRIES_MESSAGE)
-
         self.max_entries_per_node = max_entries_per_node
         self.root = Node(0, max_entries_per_node)
         self.height = 0
         self.n_entries = 0
 
     def get(self, key):
-        if key is None:
-            raise ValueError(BTree.INVALID_KEY_MESSAGE)
         return self._search(self.root, key, self.height)
     
     def _search(self, node : Node, key, height : int):
-        if height == 0:
-            for i in range(len(node)):
-                if node.entries[i].key == key:
-                    return node.entries[i].value
-        else:
-            for i in range(len(node)):
-                if i+1 == len(node) or key < node.entries[i+1].key: # find the greater entry whose value is smaller or equal to the key 
-                    return self._search(node.entries[i].next_node, key, height - 1)
+        i = 0
+        while i <= len(node):
+            if i+1 == len(node) or key < node.keys[i+1]:
+                break
+            i += 1
 
+        if key == node.keys[i]:
+            return node.values[i]
+
+        if height == 0:
+            return
+
+        return self._search(node.children[i], key, height - 1)
+        
     def put(self, key, value):
-        if key is None:
-            raise ValueError(BTree.INVALID_KEY_MESSAGE)
-        new_node : Node = self._insert(self.root, key, value, self.height)
-        self.n_entries += 1
-        if not new_node is None:
-            new_root = Node(2, self.max_entries_per_node)
-            new_root.entries[0] = Entry(self.root.entries[0].key, None, self.root)
-            new_root.entries[1] = Entry(new_node.entries[0].key, None, new_node)
+        if len(self.root) >= self.max_entries_per_node - 1:
+            old_root = self.root
+            new_root = Node(0, self.max_entries_per_node)
+            new_root.children[0] = old_root
             self.root = new_root
-            self.height += 1
+            self._split_child(new_root, 1, old_root, self.height)
+            print(new_root)
+            self._insert(new_root, key, value, self.height)
+        else:
+            self._insert(self.root, key, value, self.height)
 
     def _insert(self, node : Node, key, value, height : int):
-        new_entry = None
-        index_new_entry = 0
-
-        if height != 0:
-            n_entries_on_node = len(node)
-            for i in range(n_entries_on_node):
-                index_new_entry = i + 1
-                if i+1 == n_entries_on_node or key < node.entries[i+1].key:
-                    new_node : Node = self._insert(node.entries[i].next_node, key, value, height - 1)
-                    if new_node is None:
-                        return
-
-                    new_entry = Entry(new_node.entries[0].key, None, new_node)
-                    break
+        i = len(node) - 1
+        if height == 0:
+            while i >= 1 and key < node.keys[i]:
+                node.keys[i + 1] = node.keys[i]
+                i -= 1
+            node.keys[i + 1] = key
+            node.values[i + 1] = value
+            node.n_elements += 1
         else:
-            new_entry = Entry(key, value, None)
-            for i in range(len(node)):
-                index_new_entry = i + 1
-                if key == node.entries[i].key:
-                    node.entries[i].value = value
-                    self.n_entries -= 1
-                    return
-                if key < node.entries[i].key:
-                    index_new_entry -= 1
-                    break
+            while i >= 1 and key < node.keys[i]:
+                i -= 1
+            i = i + 1
+            child = node.children[i]
+            if len(child) == self.max_entries_per_node - 1:
+                self._split_child(node, i, child)
+                if key > node.keys[i]:
+                    i += 1
+            self._insert(child, key, value, height - 1)
 
-        node.insert(new_entry, index_new_entry)
+    def _split_child(self, node : Node, index : int, child : Node, height_child : int):
+        index_median = math.ceil(self.max_entries_per_node / 2) - 1
+        new_node = Node(self.max_entries_per_node // 2, self.max_entries_per_node)
+        for j in range(1, index_median):
+            new_node.keys[j] = child.keys[j + index_median]
 
-        if len(node) >= self.max_entries_per_node:
-            return node.split()[1]
+        if height_child != 0:
+            for j in range(0, index_median):
+                new_node.children[j] = child.children[j + index_median]
+
+        child.n_elements = self.max_entries_per_node - index_median
+
+        for j in range(len(node) + 1, index, -1):
+            node.children[j] = node.children[j - 1]
+
+        for j in range(len(node), index, -1):
+            node.keys[j] = node.keys[j - 1]
+
+        node.children[index] = new_node
+        node.keys[index] = new_node.keys[0]
+        node.n_elements += 1
+
 
     def delete(self, key):
-        self.put(key, None)
-        self.n_entries -= 1
+        pass
