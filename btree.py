@@ -62,7 +62,7 @@ class BTree:
                 self._split_child(node, i, node.children[i], height - 1)
                 # _split_child adds a key to the parent node,
                 # we need to check if this new key is now the smallest key greater than the key to be inserted
-                if key > node.keys[i + 1]:
+                if key > node.keys[i]:
                     i += 1
 
             self._insert_non_full(node.children[i], key, value, height - 1)
