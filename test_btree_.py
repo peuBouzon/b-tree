@@ -30,8 +30,8 @@ class TestBTree(unittest.TestCase):
 
                 half = (degree - 1) // 2
                 # the parent node should have the middle key and value of the full child
-                self.assertEqual(parent_node.keys[:parent_node.n_entries], [-1, initial_keys[half]])
-                self.assertEqual(parent_node.values[:parent_node.n_entries], [-1, initial_values[half]])
+                self.assertEqual(parent_node.get_keys(), [-1, initial_keys[half]])
+                self.assertEqual(parent_node.get_values(), [-1, initial_values[half]])
                 # the number of entries int the parent node should be increased by 1
                 self.assertEqual(parent_node.n_entries, 2)
                 
@@ -39,16 +39,16 @@ class TestBTree(unittest.TestCase):
 
                 # the then full child should contain the first half of the entries
                 self.assertEqual(ex_full_child.n_entries, half)
-                self.assertEqual(ex_full_child.keys[:ex_full_child.n_entries], initial_keys[:half])
-                self.assertEqual(ex_full_child.values[:ex_full_child.n_entries], initial_values[:half])
-                self.assertEqual(ex_full_child.children[:ex_full_child.n_entries + 1], initial_children[:half + 1])
+                self.assertEqual(ex_full_child.get_keys(), initial_keys[:half])
+                self.assertEqual(ex_full_child.get_values(), initial_values[:half])
+                self.assertEqual(ex_full_child.get_children(), initial_children[:half + 1])
 
                 # and a new child should be created with the other half of the entries minus the middle entry
                 new_child = parent_node.children[2]
                 self.assertEqual(new_child.n_entries, half - 1 if (degree - 1) % 2 == 0 else half)
-                self.assertEqual(new_child.keys[:new_child.n_entries], initial_keys[half + 1:])
-                self.assertEqual(new_child.values[:new_child.n_entries], initial_values[half + 1:])
-                self.assertEqual(new_child.children[:new_child.n_entries + 1], initial_children[half + 1:])
+                self.assertEqual(new_child.get_keys(), initial_keys[half + 1:])
+                self.assertEqual(new_child.get_values(), initial_values[half + 1:])
+                self.assertEqual(new_child.get_children(), initial_children[half + 1:])
 
 if __name__ == '__main__':
     unittest.main()

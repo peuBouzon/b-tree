@@ -70,7 +70,7 @@ class BTree:
     def _insert_non_full_leaf(self, node : Node, key, value):
         
         # make a binary search to find the key and update its value if it's already present
-        index_key = self.binary_search(node.keys[:node.n_entries], key)
+        index_key = self.binary_search(node.get_keys(), key)
         if index_key is not None:
             node.values[index_key] = value
             return
