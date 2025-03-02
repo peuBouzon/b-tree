@@ -1,14 +1,14 @@
+from typing import List
 class Node:
 
-    def __init__(self, n_elements : int, max_entries : int) -> None:
-        self.n_elements = n_elements
-        self.max_entries = max_entries
-        self.keys = [None] * (max_entries - 1)
-        self.values = [None] * (max_entries - 1)
-        self.children = [None] * (max_entries)
+    def __init__(self, n_entries : int, degree : int) -> None:
+        self.n_entries = n_entries
+        self.keys = [None] * (degree - 1)
+        self.values = [None] * (degree - 1)
+        self.children : List[Node] = [None] * (degree)
 
     def __len__(self):
-        return self.n_elements
+        return self.n_entries
 
     def __repr__(self) -> str:
-        return f'{[e for i, e in enumerate(self.keys) if i < self.n_elements]}'
+        return f'{self.keys[:self.n_entries]}'
