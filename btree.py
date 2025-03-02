@@ -134,55 +134,80 @@ class BTree:
         parent.children[child_index + 1] = new_sibling
         parent.n_entries += 1
 
+    def _remove_key(self, node : Node, index : int, is_leaf : bool):
+            if index < -1:
+                raise ValueError('The index should be greater than zero or -1 (last element)')
+
+            if index >= 0:
+                for j in range(index, len(node) - 1):
+                    node.keys[j] = node.keys[j + 1]
+                    node.values[j] = node.values[j + 1]
+                if is_leaf:
+                    for j in range(index + 1, len(node)):
+                        node.children[j] = node.children[j + 1]
+            node.n_entries -= 1
+
+
     def delete(self, search_key):
         value, node, index, height = self._search(self.root, search_key, self.height)
 
         # CASE 0: the key is not present 
         if value is None:
             return
+        
+        min_keys_necessary = math.ceil(self.degree / 2) - 1
 
         # CASE 1: the key is in a leaf that is full enough to allow the removal of an entry
-        if height == 0 and node.n_entries > math.ceil(self.degree / 2) - 1:
-            for j in range(index, len(node)):
-                node.keys[j] = node.keys[j + 1]
-                node.values[j] = node.values[j + 1]
-            node.n_entries -= 1
+        if height == 0 and node.n_entries > min_keys_necessary:
+            self._remove_key(node, index, True)
 
         # CASE 2: the key is in an internal node
-
         if height > 0:
-            # 2.A: the child the preceeds the search_key points to a leaf node that 
-            # has at least ceil(self.degree / 2) elements.
-            # we can replace search_key with the greater key of such leaf 
+            # 2.C: if the two childs adjacent from search_key have only min_keys_necessary,
+            #      we can merge them and remove search_key.
+            if len(node.children[index]) == min_keys_necessary and len(node.children[index + 1]) == min_keys_necessary:
+                left_child : Node = node.children[index]
+                right_child : Node = node.children[index + 1]
+                print(left_child, right_child)
+                for i in range(min_keys_necessary, 2 * min_keys_necessary):
+                    print(f'{right_child.keys[i - min_keys_necessary]} to {left_child.keys[i]}')
+                    left_child.keys[i] = right_child.keys[i - min_keys_necessary]
+                    left_child.values[i] = right_child.values[i - min_keys_necessary]
+                    left_child.children[i + 1] = right_child.children[i - min_keys_necessary + 1]
+                    left_child.n_entries += 1
+                for i in range(index + 1, len(node)):
+                    node.children[i] = node.children[i + 1]
+                self._remove_key(node, index, False)
+                return
+
+            # 2.A: if the greater key of the subtree formed by the child the preceeds the search_key 
+            # is in a leaf node that contains at least min_keys_necessary + 1, 
+            # we can replace search_key with such key
             h = height
             child : Node = node.children[index]
             while h > 1:
                 child = child.get_children()[-1]
                 h -= 1
-            if len(child) > math.ceil(self.degree / 2) - 1:
+            if len(child) > min_keys_necessary:
                 node.keys[index] = child.get_keys()[-1]
                 node.values[index] = child.get_values()[-1]
-                child.n_entries -= 1
+                self._remove_key(child, -1, True)
                 return
             
-            # 2.B: the child the succeeds the search_key points to a leaf node that 
-            # has at least ceil(self.degree / 2) elements.
-            # we can replace search_key with the smallest key of such leaf 
+            # 2.A: if the smallest key of the subtree formed by the child the succeeds the search_key 
+            # is in a leaf node that contains at least min_keys_necessary + 1, 
+            # we can replace search_key with such key
             h = height
             child : Node = node.children[index + 1]
             while h > 1:
                 child = child.get_children()[0]
                 h -= 1
 
-            if len(child) > math.ceil(self.degree / 2) - 1:
+            if len(child) > min_keys_necessary:
                 node.keys[index] = child.get_keys()[0]
                 node.values[index] = child.get_values()[0]
-                # need to shift all keys and values to the left
-                for i in range(0, len(child) - 1):
-                    child.keys[i] = child.keys[i + 1]
-                    child.values[i] = child.values[i + 1]
-                child.n_entries -= 1
-                return
+                self._remove_key(child, 0, True)
+
     
     def __repr__(self):
         queue = [(self.root, self.height)]
