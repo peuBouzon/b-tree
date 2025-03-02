@@ -1,4 +1,5 @@
 from node import Node
+import math
 
 class BTree:
     def __init__(self, degree = 1000) -> None:
@@ -7,7 +8,7 @@ class BTree:
         self.height = 0
 
     def get(self, key):
-        return self._search(self.root, key, self.height)
+        return self._search(self.root, key, self.height)[0]
     
     def _search(self, node : Node, key, height : int):
         # finds the index of the smallest key greater than or equal to the searched key
@@ -19,11 +20,11 @@ class BTree:
 
         # if the key is found, return its value
         if key == node.keys[i]:
-            return node.values[i]
+            return node.values[i], node, i, height
 
         # if it's not found and is a leaf, search is over
         if height == 0:
-            return
+            return None, None, None, None
 
         # else search in the child node
         return self._search(node.children[i + 1], key, height - 1)
@@ -134,7 +135,18 @@ class BTree:
         parent.n_entries += 1
 
     def delete(self, key):
-        pass
+        value, node, index, height = self._search(self.root, key, self.height)
+
+        # CASE 0: the key is not present 
+        if value is None:
+            return
+
+        # CASE 1: the key is in a leaf that is full enough to allow the removal of an entry
+        if height == 0 and node.n_entries > math.ceil(self.degree / 2) - 1:
+            for j in range(index, len(node)):
+                node.keys[j] = node.keys[j + 1]
+                node.values[j] = node.values[j + 1]
+            node.n_entries -= 1
     
     def __repr__(self):
         queue = [(self.root, self.height)]
