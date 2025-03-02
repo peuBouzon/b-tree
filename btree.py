@@ -168,13 +168,11 @@ class BTree:
             if len(node.children[index]) == min_keys_necessary and len(node.children[index + 1]) == min_keys_necessary:
                 left_child : Node = node.children[index]
                 right_child : Node = node.children[index + 1]
-                print(left_child, right_child)
                 for i in range(min_keys_necessary, 2 * min_keys_necessary):
-                    print(f'{right_child.keys[i - min_keys_necessary]} to {left_child.keys[i]}')
                     left_child.keys[i] = right_child.keys[i - min_keys_necessary]
                     left_child.values[i] = right_child.values[i - min_keys_necessary]
                     left_child.children[i + 1] = right_child.children[i - min_keys_necessary + 1]
-                    left_child.n_entries += 1
+                left_child.n_entries = 2 * min_keys_necessary
                 for i in range(index + 1, len(node)):
                     node.children[i] = node.children[i + 1]
                 self._remove_key(node, index, False)
