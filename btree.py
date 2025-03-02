@@ -89,7 +89,7 @@ class BTree:
         node.values[i] = value
         node.n_entries += 1
     
-    # finds the index of the key using a binary search
+    # this is just a binary search
     def _find_index(self, keys, key):
         if not keys:
             return
@@ -134,8 +134,8 @@ class BTree:
         parent.children[child_index + 1] = new_sibling
         parent.n_entries += 1
 
-    def delete(self, key):
-        value, node, index, height = self._search(self.root, key, self.height)
+    def delete(self, search_key):
+        value, node, index, height = self._search(self.root, search_key, self.height)
 
         # CASE 0: the key is not present 
         if value is None:
@@ -147,6 +147,42 @@ class BTree:
                 node.keys[j] = node.keys[j + 1]
                 node.values[j] = node.values[j + 1]
             node.n_entries -= 1
+
+        # CASE 2: the key is in an internal node
+
+        if height > 0:
+            # 2.A: the child the preceeds the search_key points to a leaf node that 
+            # has at least ceil(self.degree / 2) elements.
+            # we can replace search_key with the greater key of such leaf 
+            h = height
+            child : Node = node.children[index]
+            while h > 1:
+                child = child.get_children()[-1]
+                h -= 1
+            if len(child) > math.ceil(self.degree / 2) - 1:
+                node.keys[index] = child.get_keys()[-1]
+                node.values[index] = child.get_values()[-1]
+                child.n_entries -= 1
+                return
+            
+            # 2.B: the child the succeeds the search_key points to a leaf node that 
+            # has at least ceil(self.degree / 2) elements.
+            # we can replace search_key with the smallest key of such leaf 
+            h = height
+            child : Node = node.children[index + 1]
+            while h > 1:
+                child = child.get_children()[0]
+                h -= 1
+
+            if len(child) > math.ceil(self.degree / 2) - 1:
+                node.keys[index] = child.get_keys()[0]
+                node.values[index] = child.get_values()[0]
+                # need to shift all keys and values to the left
+                for i in range(0, len(child) - 1):
+                    child.keys[i] = child.keys[i + 1]
+                    child.values[i] = child.values[i + 1]
+                child.n_entries -= 1
+                return
     
     def __repr__(self):
         queue = [(self.root, self.height)]
