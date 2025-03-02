@@ -135,3 +135,21 @@ class BTree:
 
     def delete(self, key):
         pass
+    
+    def __repr__(self):
+        queue = [(self.root, self.height)]
+
+        output = ''
+        last_height = self.height
+        while queue:
+            node, height = queue.pop(0)
+            if last_height > height:
+                output += '\n'
+                last_height = height
+            output += f' {node}'
+            if height > 0:
+                for child in node.get_children():
+                    queue.append((child, height - 1))
+
+        return output
+
