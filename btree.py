@@ -68,9 +68,8 @@ class BTree:
             self._insert_non_full(node.children[i], key, value, height - 1)
     
     def _insert_non_full_leaf(self, node : Node, key, value):
-        
         # make a binary search to find the key and update its value if it's already present
-        index_key = self.binary_search(node.get_keys(), key)
+        index_key = self._find_index(node.get_keys(), key)
         if index_key is not None:
             node.values[index_key] = value
             return
@@ -89,7 +88,8 @@ class BTree:
         node.values[i] = value
         node.n_entries += 1
     
-    def binary_search(self, keys, key):
+    # finds the index of the key using a binary search
+    def _find_index(self, keys, key):
         if not keys:
             return
 
@@ -102,9 +102,9 @@ class BTree:
             return mid
         
         if keys[mid] > key:
-            return self.binary_search(keys[:mid], key)
+            return self._find_index(keys[:mid], key)
 
-        return self.binary_search(keys[mid + 1:], key)
+        return self._find_index(keys[mid + 1:], key)
 
     def _split_child(self, parent : Node, child_index : int, child : Node, child_height : int):
         n_keys_child = len(child)
