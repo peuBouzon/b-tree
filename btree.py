@@ -1,4 +1,5 @@
 from node import Node
+from typing import List
 import math
 
 class BTree:
@@ -6,6 +7,7 @@ class BTree:
         self.degree = degree
         self.root = Node(0, degree)
         self.height = 0
+        self.min_keys_necessary = math.ceil(self.degree / 2) - 1
 
     def get(self, key):
         return self._search(self.root, key, self.height)[0]
@@ -52,11 +54,8 @@ class BTree:
         if height == 0:
             self._insert_non_full_leaf(node, key, value)
         else:
-            # find the index of the smallest key greater then the new key
-            i = len(node) - 1
-            while i >= 0 and key < node.keys[i]:
-                i -= 1
-            i = i + 1
+            # find the index of the smallest key greater than or equal to the new key
+            i = node.get_index(key) + 1
 
             # if the child is full, we split it
             if len(node.children[i]) >= self.degree - 1:
@@ -134,10 +133,35 @@ class BTree:
         parent.children[child_index + 1] = new_sibling
         parent.n_entries += 1
 
-    def _remove_key(self, node : Node, index : int, is_leaf : bool):
-            if index < -1:
-                raise ValueError('The index should be greater than zero or -1 (last element)')
+    def delete(self, search_key):
+        # if the tree is empty, there is nothing to delete
+        if len(self.root) <= 0:
+            return
+        
+        self._remove(self.root, search_key, self.height)
 
+        if len(self.root) == 0:
+            self.root = self.root.children[0]
+
+    def _remove(self, node : Node, key, height : int):
+        i = node.get_index(key)
+        if i >= 0 and key == node.keys[i]:
+            if height == 0:
+                self._remove_without_rebalance(node, i)
+            else:
+                self._remove_from_non_leaf(node, i, height)
+        else:
+            if height == 0:
+                return
+
+            if len(node.children[i + 1]) < self.min_keys_necessary + 1:
+                # TODO: fill the child before remove
+                pass
+
+            self._remove(node.children[i + 1], key, height - 1)
+
+    # TODO: find a better name or remove this method
+    def _remove_without_rebalance(self, node : Node, index : int, is_leaf = True):
             if index >= 0:
                 for j in range(index, len(node) - 1):
                     node.keys[j] = node.keys[j + 1]
@@ -147,66 +171,43 @@ class BTree:
                         node.children[j] = node.children[j + 1]
             node.n_entries -= 1
 
+    def _remove_from_non_leaf(self, node : Node, index : int, height):
 
-    def delete(self, search_key):
-        value, node, index, height = self._search(self.root, search_key, self.height)
-
-        # CASE 0: the key is not present 
-        if value is None:
-            return
-        
-        min_keys_necessary = math.ceil(self.degree / 2) - 1
-
-        # CASE 1: the key is in a leaf that is full enough to allow the removal of an entry
-        if height == 0 and node.n_entries > min_keys_necessary:
-            self._remove_key(node, index, True)
-
-        # CASE 2: the key is in an internal node
-        if height > 0:
-            # 2.C: if the two childs adjacent from search_key have only min_keys_necessary,
-            #      we can merge them and remove search_key.
-            if len(node.children[index]) == min_keys_necessary and len(node.children[index + 1]) == min_keys_necessary:
-                left_child : Node = node.children[index]
-                right_child : Node = node.children[index + 1]
-                for i in range(min_keys_necessary, 2 * min_keys_necessary):
-                    left_child.keys[i] = right_child.keys[i - min_keys_necessary]
-                    left_child.values[i] = right_child.values[i - min_keys_necessary]
-                    left_child.children[i + 1] = right_child.children[i - min_keys_necessary + 1]
-                left_child.n_entries = 2 * min_keys_necessary
-                for i in range(index + 1, len(node)):
-                    node.children[i] = node.children[i + 1]
-                self._remove_key(node, index, False)
-                return
-
-            # 2.A: if the greater key of the subtree formed by the child the preceeds the search_key 
-            # is in a leaf node that contains at least min_keys_necessary + 1, 
-            # we can replace search_key with such key
+        # check if left children can lose a key
+        if len(node.children[index]) > self.min_keys_necessary:
             h = height
             child : Node = node.children[index]
             while h > 1:
                 child = child.get_children()[-1]
                 h -= 1
-            if len(child) > min_keys_necessary:
-                node.keys[index] = child.get_keys()[-1]
-                node.values[index] = child.get_values()[-1]
-                self._remove_key(child, -1, True)
-                return
             
-            # 2.A: if the smallest key of the subtree formed by the child the succeeds the search_key 
-            # is in a leaf node that contains at least min_keys_necessary + 1, 
-            # we can replace search_key with such key
+            node.keys[index] = child.get_keys()[-1]
+            node.values[index] = child.get_values()[-1]
+            self._remove(node.children[index], child.get_keys()[-1], 0)
+        
+        # check if right children can lose a key
+        elif len(node.children[index + 1]) > self.min_keys_necessary:
             h = height
             child : Node = node.children[index + 1]
             while h > 1:
                 child = child.get_children()[0]
                 h -= 1
 
-            if len(child) > min_keys_necessary:
-                node.keys[index] = child.get_keys()[0]
-                node.values[index] = child.get_values()[0]
-                self._remove_key(child, 0, True)
+            node.keys[index] = child.get_keys()[0]
+            node.values[index] = child.get_values()[0]
+            self._remove(node.children[index + 1], child.get_keys()[0], 0)
+        else:
+            left_child : Node = node.children[index]
+            right_child : Node = node.children[index + 1]
+            for i in range(self.min_keys_necessary, 2 * self.min_keys_necessary):
+                left_child.keys[i] = right_child.keys[i - self.min_keys_necessary]
+                left_child.values[i] = right_child.values[i - self.min_keys_necessary]
+                left_child.children[i + 1] = right_child.children[i - self.min_keys_necessary + 1]
+                left_child.n_entries += 1
+            for i in range(index + 1, len(node)):
+                node.children[i] = node.children[i + 1]
+            self._remove_without_rebalance(node, index, False)
 
-    
     def __repr__(self):
         queue = [(self.root, self.height)]
 
