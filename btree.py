@@ -17,7 +17,7 @@ class BTree:
         i = node.get_index(key)
 
         # if the key is found, return its value
-        if i >=0 and key == node.keys[i]:
+        if i >= 0 and key == node.keys[i]:
             return node.values[i]
 
         # if it's not found and is a leaf, search is over
@@ -27,6 +27,7 @@ class BTree:
         # else search in the child node
         return self._search(node.children[i + 1], key, height - 1)
 
+    # FIXME: duplicated keys
     def put(self, key, value):
         # if the root is full
         if len(self.root) >= self.degree - 1:
@@ -62,14 +63,8 @@ class BTree:
                     i += 1
 
             self._insert_non_full(node.children[i], key, value, height - 1)
-    
-    def _insert_non_full_leaf(self, node : Node, key, value):
-        # make a binary search to find the key and update its value if it's already present
-        index_key = self._find_index(node.get_keys(), key)
-        if index_key is not None:
-            node.values[index_key] = value
-            return
 
+    def _insert_non_full_leaf(self, node : Node, key, value):
         # shift every value greater than the new key to the right
         i = len(node) - 1
         while i >= 0 and key < node.keys[i]:
@@ -83,24 +78,6 @@ class BTree:
         node.keys[i] = key
         node.values[i] = value
         node.n_entries += 1
-    
-    # this is just a binary search
-    def _find_index(self, keys, key):
-        if not keys:
-            return
-
-        if len(keys) in [1, 2]: 
-            return 0 if keys[0] == key else 1 if len(keys) == 2 and keys[1] == key else None
-
-        mid = len(keys) // 2
-
-        if keys[mid] == key:
-            return mid
-        
-        if keys[mid] > key:
-            return self._find_index(keys[:mid], key)
-
-        return self._find_index(keys[mid + 1:], key)
 
     def _split_child(self, parent : Node, child_index : int, child : Node, child_height : int):
         n_keys_child = len(child)
@@ -141,11 +118,11 @@ class BTree:
         if len(self.root) == 0:
             # if root is an internal node
             if self.height > 0:
-                # we can replace it with its left child (its children have been merged, so the right child is gone)
+                # we can replace it with its left child (its children would have been merged, so the right child is gone)
                 self.root = self.root.children[0]
-            else:
-                # if root is a leaf, we can create a new empty Node
-                self.root = Node(0, self.degree)
+                self.height -= 1
+
+            # if root is a leaf, we can leave it as an empty Node
 
     def _remove(self, node : Node, key, height : int):
         i = node.get_index(key)
@@ -165,13 +142,22 @@ class BTree:
                 return
             
             # CASE 3: the key is not in the current node
-            # we need to find the child that contains the key
-            # but first, we need to make sure the child has at least the minimum number of keys
-            if len(node.children[i + 1]) < self.min_keys_necessary + 1:
-                # TODO: fill the child before remove
-                pass
+            # we will search it in the correct child
+            # but first, we need to make sure this child has at least min_keys_necessary + 1
+            child = node.children[i + 1]
+            if len(child) < self.min_keys_necessary + 1:
+                # CASE 3.A: if any adjascent sibling can lend a key, we borrow from it
+                left_sibling = node.children[i]
+                right_sibling = node.children[i + 2]
+                if i + 2 <= len(child) and len(right_sibling) > self.min_keys_necessary:
+                    self._rotate_left(node, child, right_sibling, i)
+                elif i > 0 and len(left_sibling) > self.min_keys_necessary:
+                    self._rotate_right(node, child, left_sibling, i)
+                else:
+                # CASE 3.B: if no sibling can lend a key, we merge the children with its right sibling
+                    pass
 
-            self._remove(node.children[i + 1], key, height - 1)
+            self._remove(child, key, height - 1)
 
     def _remove_from_non_leaf(self, node : Node, index : int, height):
 
@@ -186,10 +172,11 @@ class BTree:
                 h -= 1
 
             # and replace the key to be removed with it
+            # TODO: improve comments
             node.keys[index] = child.get_keys()[-1]
             node.values[index] = child.get_values()[-1]
             
-            # after that, we can remove the key from the left child
+            # after that, we can remove child.get_keys()[-1] from the left child
             self._remove(node.children[index], child.get_keys()[-1], 0)
         
         # CASE 2.B: the right child can lose a key
@@ -214,6 +201,31 @@ class BTree:
 
             # and remove the key
             node.remove(index)
+
+    def _rotate_right(self, node: Node, child: Node, left_sibling : Node, i : int):
+        # shift every value greater than the new key to the right
+        j = len(child) - 1
+        while j >= 0:
+            child.keys[i + 1] = child.keys[i]
+            child.values[i + 1] = child.values[i]
+            child.children[i + 1] = child.children[i]
+            j -= 1
+        child.children[len(child)] = child.children[len(child) - 1]
+
+        child.keys[0] = node.keys[i]
+        child.values[0] = node.values[i]
+        child.children[0] = left_sibling.get_children()[-1]
+        node.keys[i] = left_sibling.keys[len(left_sibling) - 1]
+        node.values[i] = left_sibling.values[len(left_sibling) - 1]
+        left_sibling.remove(-1, True)
+
+    def _rotate_left(self, node: Node, child: Node, right_sibling : Node, i : int):
+        child.keys[len(child)] = node.keys[i + 1]
+        child.values[len(child)] = node.values[i + 1]
+        child.children[len(child) + 1] = right_sibling.children[0]
+        node.keys[i + 1] = right_sibling.keys[0]
+        node.values[i + 1] = right_sibling.values[0]
+        right_sibling.remove(0, True)
 
     def _merge(self, left : Node, right : Node):
         for i in range(self.min_keys_necessary, 2 * self.min_keys_necessary):
