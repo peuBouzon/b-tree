@@ -10,23 +10,19 @@ class BTree:
         self.min_keys_necessary = math.ceil(self.degree / 2) - 1
 
     def get(self, key):
-        return self._search(self.root, key, self.height)[0]
+        return self._search(self.root, key, self.height)
     
     def _search(self, node : Node, key, height : int):
         # finds the index of the smallest key greater than or equal to the searched key
-        i = 0
-        while i <= len(node):
-            if i+1 == len(node) or key < node.keys[i+1]:
-                break
-            i += 1
+        i = node.get_index(key)
 
         # if the key is found, return its value
-        if key == node.keys[i]:
-            return node.values[i], node, i, height
+        if i >=0 and key == node.keys[i]:
+            return node.values[i]
 
         # if it's not found and is a leaf, search is over
         if height == 0:
-            return None, None, None, None
+            return None
 
         # else search in the child node
         return self._search(node.children[i + 1], key, height - 1)
