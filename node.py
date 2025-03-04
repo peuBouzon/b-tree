@@ -7,7 +7,6 @@ class Node:
         self.values = [None] * (degree - 1)
         self.children : List[Node] = [None] * (degree)
 
-
     def get_children(self):
         return self.children[:self.n_entries + 1]
     
