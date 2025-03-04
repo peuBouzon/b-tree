@@ -23,6 +23,16 @@ class Node:
         while i >= 0 and key < self.keys[i]:
             i -= 1
         return i
+
+    def remove(self, index, include_children = True):
+        if index >= 0:
+            for j in range(index, len(self) - 1):
+                self.keys[j] = self.keys[j + 1]
+                self.values[j] = self.values[j + 1]
+            if include_children:
+                for j in range(index + 1, len(self)):
+                    self.children[j] = self.children[j + 1]
+        self.n_entries -= 1
     
     def __len__(self):
         return self.n_entries
