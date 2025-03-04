@@ -172,8 +172,7 @@ class BTree:
             node.n_entries -= 1
 
     def _remove_from_non_leaf(self, node : Node, index : int, height):
-
-        # check if left children can lose a key
+        # check if left child can lose a key
         if len(node.children[index]) > self.min_keys_necessary:
             h = height
             child : Node = node.children[index]
@@ -185,7 +184,7 @@ class BTree:
             node.values[index] = child.get_values()[-1]
             self._remove(node.children[index], child.get_keys()[-1], 0)
         
-        # check if right children can lose a key
+        # check if right child can lose a key
         elif len(node.children[index + 1]) > self.min_keys_necessary:
             h = height
             child : Node = node.children[index + 1]
