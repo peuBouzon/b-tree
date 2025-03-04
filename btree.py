@@ -1,5 +1,4 @@
 from node import Node
-from typing import List
 import math
 
 class BTree:
@@ -154,8 +153,9 @@ class BTree:
                 elif i > 0 and len(left_sibling) > self.min_keys_necessary:
                     self._rotate_right(node, child, left_sibling, i)
                 else:
-                # CASE 3.B: if no sibling can lend a key, we merge the children with its right sibling
-                    pass
+                    # CASE 3.B: if no sibling can lend a key
+                    self._merge(node, i if i > 0 else i + 1)
+                    child = node.children[i]
 
             self._remove(child, key, height - 1)
 
@@ -196,11 +196,12 @@ class BTree:
 
         # CASE 2.C: none of the adjancent children can lose a key
         else:
-            # in this case, we can merge the children
-            self._merge(node.children[index], node.children[index + 1])
+            # in this case, we can merge the children and set the key as the median value
+            key = node.keys[index]
+            self._merge(node, index)
 
-            # and remove the key
-            node.remove(index)
+            # then, we can remove the key from the result
+            self._remove(node.children[index], key, height - 1)
 
     def _rotate_right(self, node: Node, child: Node, left_sibling : Node, i : int):
         # shift every value greater than the new key to the right
@@ -227,12 +228,18 @@ class BTree:
         node.values[i + 1] = right_sibling.values[0]
         right_sibling.remove(0, True)
 
-    def _merge(self, left : Node, right : Node):
-        for i in range(self.min_keys_necessary, 2 * self.min_keys_necessary):
-            left.keys[i] = right.keys[i - self.min_keys_necessary]
-            left.values[i] = right.values[i - self.min_keys_necessary]
-            left.children[i + 1] = right.children[i - self.min_keys_necessary + 1]
-        left.n_entries = 2 * self.min_keys_necessary
+    def _merge(self, node : Node, index):
+        left : Node = node.children[index]
+        right : Node = node.children[index + 1]
+        left.keys[len(left)] = node.keys[index]
+        left.values[len(left)] = node.values[index]
+        for j in range(self.min_keys_necessary, 2 * self.min_keys_necessary):
+            left.keys[j + 1] = right.keys[j - self.min_keys_necessary]
+            left.values[j + 1] = right.values[j - self.min_keys_necessary]
+            left.children[j + 2] = right.children[j - self.min_keys_necessary + 1]
+        left.n_entries = 2 * self.min_keys_necessary + 1
+
+        node.remove(index, True)
 
     def __repr__(self):
         queue = [(self.root, self.height)]
