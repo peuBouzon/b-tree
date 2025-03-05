@@ -148,14 +148,20 @@ class BTree:
                 # CASE 3.A: if any adjascent sibling can lend a key, we borrow from it
                 left_sibling = node.children[i]
                 right_sibling = node.children[i + 2]
-                if i + 2 <= len(child) and len(right_sibling) > self.min_keys_necessary:
-                    self._rotate_left(node, child, right_sibling, i)
-                elif i > 0 and len(left_sibling) > self.min_keys_necessary:
+                if i >= 0 and len(left_sibling) > self.min_keys_necessary:
                     self._rotate_right(node, child, left_sibling, i)
+                elif i + 2 <= len(child) and len(right_sibling) > self.min_keys_necessary:
+                    self._rotate_left(node, child, right_sibling, i)
                 else:
                     # CASE 3.B: if no sibling can lend a key
-                    self._merge(node, i if i > 0 else i + 1)
-                    child = node.children[i]
+                    if i >= 0:
+                        # merge with right
+                        self._merge(node, i)
+                        child = node.children[i]
+                    else:
+                        # merge with left
+                        self._merge(node, i + 1)
+
 
             self._remove(child, key, height - 1)
 
