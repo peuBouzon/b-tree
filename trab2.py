@@ -7,15 +7,17 @@ if __name__ == '__main__':
     parser.add_argument('output')
     args = parser.parse_args()
     with open(args.input, 'r') as f:
-        max_entries_per_node = int(f.readline().strip())
+        degree = int(f.readline().strip())
         n_operations = int(f.readline().strip())
-        btree = BTree(max_entries_per_node)
+        btree = BTree(degree)
         processed = 0
         with open(args.output, 'w') as output_file:
             for line in f:
                 args = line.split(' ')
                 command = args[0].strip()
                 arg1 = int(args[1].strip().replace(',', ''))
+                print(f'{command} {arg1}')
+
                 if command == 'I':
                     btree.put(arg1, int(args[2].strip().replace(',', '')))
                 elif command == 'R':
@@ -25,4 +27,10 @@ if __name__ == '__main__':
                     if processed < n_operations - 1:
                         output_file.write('\n')
                 processed += 1
+
+                print(btree)
+                print('-' * 50)
+            print(btree)
+            output_file.write('\n\n-- ÁRVORE B\n')
+            output_file.write(str(btree).replace("'", ""))
         
