@@ -1,11 +1,12 @@
 from typing import List
+
 class Node:
 
     def __init__(self, n_entries : int, degree : int) -> None:
         self.n_entries = n_entries
-        self.keys = [None] * (degree - 1)
-        self.values = [None] * (degree - 1)
-        self.children : List[Node] = [None] * (degree)
+        self.keys = [None] * (degree)
+        self.values = [None] * (degree)
+        self.children : List[Node] = [None] * (degree + 1)
 
     def get_children(self):
         return self.children[:self.n_entries + 1]
@@ -38,4 +39,5 @@ class Node:
 
     def __repr__(self) -> str:
         #return str(self.get_keys())
-        return str([f'{k} -> {p}' for k, p in zip(self.get_keys(), self.get_values())])
+        #return str([f'{k} -> {p}' for k, p in zip(self.get_keys(), self.get_values())])
+        return str([f'key : {k}' for k in self.get_keys()])
