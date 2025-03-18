@@ -29,12 +29,12 @@ class BTree:
     def put(self, key, value):
         entry = self._insert(self.root, key, value, self.height)
         if entry is not None:
+            median_key, median_value, new_child = entry
             root = Node(1, self.degree)
-            root.keys[0] = entry[0]
-            root.values[0] = entry[1]
-            # TODO: check if new_child should be first or second child
+            root.keys[0] = median_key
+            root.values[0] = median_value
             root.children[0] = self.root
-            root.children[1] = entry[2]
+            root.children[1] = new_child
             self.root = root
             self.height += 1
 
@@ -81,8 +81,8 @@ class BTree:
 
     def _split(self, node : Node, height : int):
         n_keys_child = len(node)
-        half = n_keys_child // 2 - 1
-        new_sibling = Node(half + 1 if n_keys_child % 2 == 0 else half + 2, self.degree)
+        half = n_keys_child // 2 - 1 if len(node) % 2 == 0 else n_keys_child // 2 
+        new_sibling = Node(half + 1 if len(node) % 2 == 0 else half, self.degree)
         node.n_entries = half
 
         for j in range(0, len(new_sibling)):
