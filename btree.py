@@ -42,9 +42,12 @@ class BTree:
             self.height += 1
 
     def _insert(self, node : Node, key, value, height: int):
+        key_index = node.get_index(key)
+        child_index = key_index + 1
+        if (key_index < len(node)) and node.keys[key_index] == key:
+            node.values[key_index] = value
+            return
         if height > 0:
-            child_index = node.get_index(key) + 1
-            child = node.children[child_index]
             entry = self._insert(node.children[child_index], key, value, height - 1)
             if entry is not None:
                 median_key, median_value, new_child = entry
