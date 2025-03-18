@@ -1,8 +1,6 @@
 from node import Node
 import math
 
-# TODO: implement non-preemptive insert
-
 class BTree:
     def __init__(self, degree = 1000) -> None:
         self.degree = degree
@@ -28,7 +26,6 @@ class BTree:
         # else search in the child node
         return self._search(node.children[i + 1], key, height - 1)
 
-    # FIXME: duplicated keys
     def put(self, key, value):
         entry = self._insert(self.root, key, value, self.height)
         if entry is not None:
@@ -84,8 +81,8 @@ class BTree:
 
     def _split(self, node : Node, height : int):
         n_keys_child = len(node)
-        half = n_keys_child // 2
-        new_sibling = Node(half - 1 if n_keys_child % 2 == 0 else half, self.degree)
+        half = n_keys_child // 2 - 1
+        new_sibling = Node(half + 1 if n_keys_child % 2 == 0 else half + 2, self.degree)
         node.n_entries = half
 
         for j in range(0, len(new_sibling)):
@@ -114,7 +111,7 @@ class BTree:
                 self.root = self.root.children[0]
                 self.height -= 1
 
-            # if root is a leaf, we can leave it as an empty Node
+            # else if root is a leaf, we can leave it as an empty Node
 
     def _remove(self, node : Node, key, height : int):
         i = node.get_index(key)
