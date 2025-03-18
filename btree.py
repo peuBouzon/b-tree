@@ -147,13 +147,12 @@ class BTree:
                 else:
                     # CASE 3.B: if no sibling can lend a key
                     if i >= 0:
-                        # merge with right
+                        # merge with left
                         self._merge(node, i)
                         child = node.children[i]
                     else:
-                        # merge with left
+                        # merge with right
                         self._merge(node, i + 1)
-
             self._remove(child, key, height - 1)
 
     def _remove_from_non_leaf(self, node : Node, index : int, height):
@@ -202,19 +201,25 @@ class BTree:
 
     def _rotate_right(self, node: Node, child: Node, left_sibling : Node, i : int):
         # shift every value greater than the new key to the right
-        j = len(child) - 1
+
+        if len(child) < self.degree:
+            child.children[len(child) + 1] = child.children[len(child)]
+
+        j = len(child)
         while j >= 0:
-            child.keys[i + 1] = child.keys[i]
-            child.values[i + 1] = child.values[i]
-            child.children[i + 1] = child.children[i]
+            child.keys[j + 1] = child.keys[j]
+            child.values[j + 1] = child.values[j]
+            child.children[j + 1] = child.children[j]
             j -= 1
-        child.children[len(child)] = child.children[len(child) - 1]
 
         child.keys[0] = node.keys[i]
         child.values[0] = node.values[i]
         child.children[0] = left_sibling.get_children()[-1]
+        child.n_entries += 1
+
         node.keys[i] = left_sibling.keys[len(left_sibling) - 1]
         node.values[i] = left_sibling.values[len(left_sibling) - 1]
+
         left_sibling.remove(-1, True)
 
     def _rotate_left(self, node: Node, child: Node, right_sibling : Node, i : int):
