@@ -15,11 +15,11 @@ if __name__ == '__main__':
             for line in f:
                 args = line.split(' ')
                 command = args[0].strip()
-                arg1 = int(args[1].strip().replace(',', ''))
+                arg1 = args[1].strip().replace(',', '')
                 print(f'{command} {arg1}')
 
                 if command == 'I':
-                    btree.put(arg1, int(args[2].strip().replace(',', '')))
+                    btree.put(arg1, args[2].strip().replace(',', ''))
                 elif command == 'R':
                     btree.delete(arg1)
                 elif command == 'B':
