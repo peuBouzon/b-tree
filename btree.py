@@ -116,7 +116,6 @@ class BTree:
     def _remove(self, node : Node, key, height : int):
         i = node.get_index(key)
         # the key is found
-        print('r', node)
         if i >= 0 and key == node.keys[i]:
             if height == 0:
                 # CASE 1: the key is in a leaf node
@@ -219,6 +218,7 @@ class BTree:
         child.keys[len(child)] = node.keys[i + 1]
         child.values[len(child)] = node.values[i + 1]
         child.children[len(child) + 1] = right_sibling.children[0]
+        child.n_entries += 1
         node.keys[i + 1] = right_sibling.keys[0]
         node.values[i + 1] = right_sibling.values[0]
         right_sibling.remove(0, True)
