@@ -16,7 +16,6 @@ if __name__ == '__main__':
                 args = line.split(' ')
                 command = args[0].strip()
                 arg1 = int(args[1].strip().replace(',', ''))
-                print(f'{command} {arg1}')
 
                 if command == 'I':
                     btree.put(arg1, int(args[2].strip().replace(',', '')))
@@ -28,8 +27,5 @@ if __name__ == '__main__':
                         output_file.write('\n')
                 processed += 1
 
-                print(btree)
-                print('-' * 50)
-            print(btree)
             output_file.write('\n\n-- ÁRVORE B\n')
             output_file.write(str(btree).replace("'", ""))
