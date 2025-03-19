@@ -9,17 +9,17 @@ if __name__ == '__main__':
     with open(args.input, 'r') as f:
         degree = int(f.readline().strip())
         n_operations = int(f.readline().strip())
-        btree = BTree(degree)
+        btree = BTree(max(degree, 3))
         processed = 0
         with open(args.output, 'w') as output_file:
             for line in f:
                 args = line.split(' ')
                 command = args[0].strip()
-                arg1 = args[1].strip().replace(',', '')
+                arg1 = int(args[1].strip().replace(',', ''))
                 print(f'{command} {arg1}')
 
                 if command == 'I':
-                    btree.put(arg1, args[2].strip().replace(',', ''))
+                    btree.put(arg1, int(args[2].strip().replace(',', '')))
                 elif command == 'R':
                     btree.delete(arg1)
                 elif command == 'B':
@@ -33,4 +33,3 @@ if __name__ == '__main__':
             print(btree)
             output_file.write('\n\n-- ÁRVORE B\n')
             output_file.write(str(btree).replace("'", ""))
-        
