@@ -28,7 +28,9 @@ class BTree:
 
     def put(self, key, value):
         entry = self._insert(self.root, key, value, self.height)
+        # if the root had to be split
         if entry is not None:
+            # we need to create a new root using the previous root and the new node as children
             median_key, median_value, new_child = entry
             root = Node(1, self.degree)
             root.keys[0] = median_key
@@ -36,19 +38,28 @@ class BTree:
             root.children[0] = self.root
             root.children[1] = new_child
             self.root = root
+            # and increase the tree height
             self.height += 1
 
     def _insert(self, node : Node, key, value, height: int):
         key_index = node.get_index(key)
         child_index = key_index + 1
+
+        # if the key is already in the node, we just update its value
         if (key_index < len(node)) and node.keys[key_index] == key:
             node.values[key_index] = value
             return
+        
+        # internal node
         if height > 0:
+            # first we insert the key in the correct child
             entry = self._insert(node.children[child_index], key, value, height - 1)
+
+            # if it had to be split
             if entry is not None:
+                # we need to insert the median key and new child in the current node
                 median_key, median_value, new_child = entry
-                # if the parent node is not full
+
                 for i in reversed(range(child_index, len(node))):
                     node.keys[i + 1] = node.keys[i]
                     node.values[i + 1] = node.values[i]
@@ -60,9 +71,12 @@ class BTree:
                 node.values[child_index] = median_value
                 node.children[child_index + 1] = new_child
                 node.n_entries += 1
+
+                # if the current node is now full, we have to split it also
                 if len(node) >= self.degree:
                     return self._split(node, height)
         else:
+            # if the current node is a leaf
             # shift every value greater than the new key to the right
             i = len(node) - 1
             while i >= 0 and key < node.keys[i]:
@@ -76,11 +90,15 @@ class BTree:
             node.keys[i] = key
             node.values[i] = value
             node.n_entries += 1
+
+            # if the current node is full, we have to split
             if len(node) >= self.degree:
                 return self._split(node, height)
-
+    
+    # split a node in the middle and return the median key and its value and the new sibling
     def _split(self, node : Node, height : int):
         n_keys_child = len(node)
+        # if the degree is even, the right child will have one extra key
         half = n_keys_child // 2 - 1 if len(node) % 2 == 0 else n_keys_child // 2 
         new_sibling = Node(half + 1 if len(node) % 2 == 0 else half, self.degree)
         node.n_entries = half
@@ -168,7 +186,6 @@ class BTree:
                 h -= 1
 
             # and replace the key to be removed with it
-            # TODO: improve comments
             node.keys[index] = child.get_keys()[-1]
             node.values[index] = child.get_values()[-1]
             
@@ -185,7 +202,7 @@ class BTree:
                 child = child.get_children()[0]
                 h -= 1
 
-            # same analysis as with the left child
+            # and replace the key to be removed with it
             node.keys[index] = child.get_keys()[0]
             node.values[index] = child.get_values()[0]
             self._remove(node.children[index + 1], child.get_keys()[0], 0)
@@ -200,8 +217,8 @@ class BTree:
             self._remove(node.children[index], key, height - 1)
 
     def _rotate_right(self, node: Node, child: Node, left_sibling : Node, i : int):
-        # shift every value greater than the new key to the right
 
+        # shift every value greater than the new key to the right
         if len(child) < self.degree:
             child.children[len(child) + 1] = child.children[len(child)]
 
@@ -212,24 +229,30 @@ class BTree:
             child.children[j + 1] = child.children[j]
             j -= 1
 
+        # insert the key from the parent node
         child.keys[0] = node.keys[i]
         child.values[0] = node.values[i]
         child.children[0] = left_sibling.get_children()[-1]
         child.n_entries += 1
 
+        # replace the key in the parent node with the greatest key from the left sibling
         node.keys[i] = left_sibling.keys[len(left_sibling) - 1]
         node.values[i] = left_sibling.values[len(left_sibling) - 1]
 
         left_sibling.n_entries -= 1
 
     def _rotate_left(self, node: Node, child: Node, right_sibling : Node, i : int):
+        # insert the key from the parent node and the child from the right sibling
         child.keys[len(child)] = node.keys[i + 1]
         child.values[len(child)] = node.values[i + 1]
         child.children[len(child) + 1] = right_sibling.children[0]
         child.n_entries += 1
+
+        # replace the key in the parent node with the smallest key from the right sibling
         node.keys[i + 1] = right_sibling.keys[0]
         node.values[i + 1] = right_sibling.values[0]
 
+        # remove the key at index 0 from the right sibling
         for j in range(0, len(right_sibling) - 1):
             right_sibling.keys[j] = right_sibling.keys[j + 1]
             right_sibling.values[j] = right_sibling.values[j + 1]
@@ -239,6 +262,7 @@ class BTree:
         right_sibling.n_entries -= 1
 
 
+    # merge two siblings using a key from the parent node in the middle
     def _merge(self, node : Node, index):
         left : Node = node.children[index]
         right : Node = node.children[index + 1]
