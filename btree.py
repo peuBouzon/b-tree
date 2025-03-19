@@ -121,7 +121,10 @@ class BTree:
                 # CASE 1: the key is in a leaf node
                 # recall that we made sure the node had at least one extra element before _remove is called,
                 # so, we can just remove the key
-                node.remove(i, False)
+                for j in range(i, len(node) - 1):
+                    node.keys[j] = node.keys[j + 1]
+                    node.values[j] = node.values[j + 1]
+                node.n_entries -= 1
             else:
                 # CASE 2: the key is in an internal node
                 self._remove_from_non_leaf(node, i, height)
@@ -217,7 +220,7 @@ class BTree:
         node.keys[i] = left_sibling.keys[len(left_sibling) - 1]
         node.values[i] = left_sibling.values[len(left_sibling) - 1]
 
-        left_sibling.remove(-1, True)
+        left_sibling.n_entries -= 1
 
     def _rotate_left(self, node: Node, child: Node, right_sibling : Node, i : int):
         child.keys[len(child)] = node.keys[i + 1]
@@ -226,7 +229,15 @@ class BTree:
         child.n_entries += 1
         node.keys[i + 1] = right_sibling.keys[0]
         node.values[i + 1] = right_sibling.values[0]
-        right_sibling.remove(0, True)
+
+        for j in range(0, len(right_sibling) - 1):
+            right_sibling.keys[j] = right_sibling.keys[j + 1]
+            right_sibling.values[j] = right_sibling.values[j + 1]
+       
+        for j in range(0, len(right_sibling)):
+            right_sibling.children[j] = right_sibling.children[j + 1]
+        right_sibling.n_entries -= 1
+
 
     def _merge(self, node : Node, index):
         left : Node = node.children[index]
@@ -239,7 +250,13 @@ class BTree:
             left.children[j + 2] = right.children[j - self.min_keys_necessary + 1]
         left.n_entries = 2 * self.min_keys_necessary + 1
 
-        node.remove(index, True)
+        for j in range(index, len(node) - 1):
+            node.keys[j] = node.keys[j + 1]
+            node.values[j] = node.values[j + 1]
+    
+        for j in range(index + 1, len(node)):
+            node.children[j] = node.children[j + 1]
+        node.n_entries -= 1
 
     def __repr__(self):
         queue = [(self.root, self.height)]
