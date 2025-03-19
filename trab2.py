@@ -9,7 +9,7 @@ if __name__ == '__main__':
     with open(args.input, 'r') as f:
         degree = int(f.readline().strip())
         n_operations = int(f.readline().strip())
-        btree = BTree(max(degree, 3))
+        btree = BTree(max(degree, 4))
         processed = 0
         with open(args.output, 'w') as output_file:
             for line in f:
