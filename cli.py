@@ -27,5 +27,5 @@ if __name__ == '__main__':
                         output_file.write('\n')
                 processed += 1
 
-            output_file.write('\n\n-- ÁRVORE B\n')
+            output_file.write('\n\n-- ARVORE B\n')
             output_file.write(str(btree).replace("'", ""))
