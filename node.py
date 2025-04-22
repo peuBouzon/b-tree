@@ -30,5 +30,5 @@ class Node:
     def __repr__(self) -> str:
         output = '['
         for k in self.get_keys():
-            output += f'key : {k}, '
+            output += f'key: {k}, '
         return output + ']'
